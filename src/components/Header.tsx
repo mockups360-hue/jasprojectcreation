@@ -1,17 +1,14 @@
 import { Search, ShoppingBag, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const cartCount = 0;
-
-  return (
-    <>
+  return <>
       {/* Main Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/30">
         <div className="container flex items-center justify-between py-4">
-          <Link to="/" className="font-display text-2xl md:text-3xl font-semibold tracking-tight">
+          <Link to="/" className="font-display text-2xl md:text-3xl tracking-tight font-extrabold">
             JASPROJECT®
           </Link>
 
@@ -27,11 +24,7 @@ const Header = () => {
               </span>
             </button>
 
-            <button 
-              className="p-2 hover:bg-secondary rounded-full transition-colors md:hidden"
-              onClick={() => setIsMenuOpen(true)}
-              aria-label="Menu"
-            >
+            <button className="p-2 hover:bg-secondary rounded-full transition-colors md:hidden" onClick={() => setIsMenuOpen(true)} aria-label="Menu">
               <Menu className="w-5 h-5" />
             </button>
 
@@ -78,51 +71,28 @@ const Header = () => {
       </div>
 
       {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-background">
+      {isMenuOpen && <div className="fixed inset-0 z-[100] bg-background">
           <div className="flex items-center justify-between p-4 border-b border-border/30">
             <span className="font-display text-lg font-semibold tracking-wide">MENU</span>
-            <button 
-              onClick={() => setIsMenuOpen(false)}
-              className="p-2 hover:bg-secondary rounded-full transition-colors"
-            >
+            <button onClick={() => setIsMenuOpen(false)} className="p-2 hover:bg-secondary rounded-full transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
           <nav className="p-6 space-y-4">
-            <Link 
-              to="/" 
-              className="block text-lg font-body py-2 border-b border-border/30"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link to="/" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
               home
             </Link>
-            <Link 
-              to="/shop" 
-              className="block text-lg font-body py-2 border-b border-border/30"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link to="/shop" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
               shop
             </Link>
-            <Link 
-              to="/about" 
-              className="block text-lg font-body py-2 border-b border-border/30"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link to="/about" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
               about
             </Link>
-            <Link 
-              to="/login" 
-              className="block text-lg font-body py-2 border-b border-border/30"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link to="/login" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
               login
             </Link>
           </nav>
-        </div>
-      )}
-    </>
-  );
+        </div>}
+    </>;
 };
-
 export default Header;
