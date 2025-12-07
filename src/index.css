@@ -2,7 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+@font-face {
+  font-family: 'Made Outer Sans';
+  src: url('https://fonts.cdnfonts.com/s/63408/MADE Outer Sans Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Made Outer Sans';
+  src: url('https://fonts.cdnfonts.com/s/63408/MADE Outer Sans Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Made Outer Sans';
+  src: url('https://fonts.cdnfonts.com/s/63408/MADE Outer Sans Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 @layer base {
   :root {
@@ -37,8 +59,8 @@
     --radius: 0.5rem;
 
     /* Custom tokens */
-    --font-display: 'Cormorant Garamond', serif;
-    --font-body: 'Inter', sans-serif;
+    --font-display: 'Made Outer Sans', 'Helvetica Neue', sans-serif;
+    --font-body: 'Helvetica', 'Helvetica Neue', Arial, sans-serif;
     
     --cream: 30 25% 96%;
     --cream-dark: 30 20% 92%;
@@ -137,7 +159,7 @@
 }
 
 .animate-marquee {
-  animation: marquee 10s linear infinite;
+  animation: marquee 5s linear infinite;
 }
 
 .animate-fade-in {
