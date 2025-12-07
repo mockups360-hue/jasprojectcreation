@@ -10,8 +10,7 @@ const Hero = () => {
           {/* Overlay Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
             <span className="text-charcoal/80 text-sm md:text-base font-body tracking-widest mb-2 animate-fade-in">
-              just in
-            </span>
+          </span>
             <h1 style={{
             animationDelay: '0.1s'
           }} className="font-display text-4xl md:text-6xl lg:text-7xl font-light mb-6 animate-slide-up text-gray-200">
