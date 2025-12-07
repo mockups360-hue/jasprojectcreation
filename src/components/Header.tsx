@@ -8,24 +8,6 @@ const Header = () => {
 
   return (
     <>
-      {/* Promotional Banner */}
-      <div className="bg-charcoal text-primary-foreground py-2.5 overflow-hidden">
-        <div className="flex whitespace-nowrap animate-marquee">
-          <span className="mx-8 text-sm font-body tracking-wide">
-            <span className="font-semibold">free shipping</span> on orders above <span className="italic font-medium">2000EGP</span>
-          </span>
-          <span className="mx-8 text-sm font-body tracking-wide">
-            <span className="font-semibold">free shipping</span> on orders above <span className="italic font-medium">2000EGP</span>
-          </span>
-          <span className="mx-8 text-sm font-body tracking-wide">
-            <span className="font-semibold">free shipping</span> on orders above <span className="italic font-medium">2000EGP</span>
-          </span>
-          <span className="mx-8 text-sm font-body tracking-wide">
-            <span className="font-semibold">free shipping</span> on orders above <span className="italic font-medium">2000EGP</span>
-          </span>
-        </div>
-      </div>
-
       {/* Main Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/30">
         <div className="container flex items-center justify-between py-4">
@@ -61,6 +43,24 @@ const Header = () => {
           </div>
         </div>
       </header>
+
+      {/* Promotional Banner */}
+      <div className="bg-charcoal text-primary-foreground py-2.5 overflow-hidden">
+        <div className="flex whitespace-nowrap animate-marquee">
+          <span className="mx-8 text-sm font-body tracking-wide">
+            <span className="font-semibold">free shipping</span> on orders above <span className="italic font-medium">2000EGP</span>
+          </span>
+          <span className="mx-8 text-sm font-body tracking-wide">
+            <span className="font-semibold">free shipping</span> on orders above <span className="italic font-medium">2000EGP</span>
+          </span>
+          <span className="mx-8 text-sm font-body tracking-wide">
+            <span className="font-semibold">free shipping</span> on orders above <span className="italic font-medium">2000EGP</span>
+          </span>
+          <span className="mx-8 text-sm font-body tracking-wide">
+            <span className="font-semibold">free shipping</span> on orders above <span className="italic font-medium">2000EGP</span>
+          </span>
+        </div>
+      </div>
 
       {/* Mobile Menu */}
       {isMenuOpen && (
