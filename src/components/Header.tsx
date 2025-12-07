@@ -8,7 +8,7 @@ const Header = () => {
       {/* Main Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/30">
         <div className="container flex items-center justify-between py-4">
-          <Link to="/" className="font-display md:text-3xl tracking-tight font-extrabold text-3xl">
+          <Link to="/" className="font-display text-2xl tracking-tight font-extrabold md:text-5xl">
             JASPROJECT®
           </Link>
 
