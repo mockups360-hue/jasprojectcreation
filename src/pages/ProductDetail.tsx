@@ -42,7 +42,7 @@ const ProductDetail = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           {/* Product Image */}
-          <div className="aspect-square bg-secondary rounded-lg overflow-hidden">
+          <div className="aspect-square bg-background rounded-lg overflow-hidden">
             <img
               src={product.image}
               alt={product.name}
