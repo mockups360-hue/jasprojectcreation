@@ -26,7 +26,7 @@ const FeaturedProducts = () => {
         {products.map((product, index) => (
           <div key={product.id} className="relative flex-1 flex">
             <Link to={`/product/${product.id}`} className="block w-full group">
-              <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
+              <div className="relative aspect-[3/4] overflow-hidden bg-background">
                 <img
                   src={product.image}
                   alt={product.name}
