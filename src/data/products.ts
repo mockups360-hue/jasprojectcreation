@@ -26,10 +26,9 @@ export const products: Product[] = [
       "- premium fleece zip-up hoodie",
       "- relaxed fit / heavyweight fabric",
       "- puff print logo",
-      "- 100% cotton / 400 gsm",
-      "- model is wearing size L"
+      "- 100% cotton / 400 gsm"
     ],
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["S", "M"],
     stock: 24
   },
   {
@@ -43,10 +42,9 @@ export const products: Product[] = [
       "- premium fleece zip-up hoodie",
       "- relaxed fit / heavyweight fabric",
       "- puff print logo",
-      "- 100% cotton / 400 gsm",
-      "- model is wearing size L"
+      "- 100% cotton / 400 gsm"
     ],
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["S", "M"],
     stock: 18
   }
 ];
