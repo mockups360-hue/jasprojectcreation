@@ -1,9 +1,11 @@
-import { Search, ShoppingBag, Menu, X } from "lucide-react";
+import { Search, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import CartSheet from "./CartSheet";
+
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const cartCount = 0;
+  
   return <>
       {/* Main Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/30">
@@ -17,12 +19,7 @@ const Header = () => {
               <Search className="w-5 h-5" />
             </button>
             
-            <button className="p-2 hover:bg-secondary rounded-full transition-colors relative" aria-label="Cart">
-              <ShoppingBag className="w-5 h-5" />
-              <span className="absolute -top-0.5 -right-0.5 bg-charcoal text-primary-foreground text-xs w-4 h-4 rounded-full flex items-center justify-center font-medium">
-                {cartCount}
-              </span>
-            </button>
+            <CartSheet />
 
             <button className="p-2 hover:bg-secondary rounded-full transition-colors md:hidden" onClick={() => setIsMenuOpen(true)} aria-label="Menu">
               <Menu className="w-5 h-5" />
