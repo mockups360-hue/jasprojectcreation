@@ -1,10 +1,8 @@
 import { Truck } from "lucide-react";
 import Newsletter from "./Newsletter";
-
 const Footer = () => {
-  return (
-    <>
-      <Newsletter />
+  return <>
+      
       <footer className="bg-charcoal text-primary-foreground">
         {/* Info Section */}
         <div className="container py-12 space-y-8 border-t border-primary-foreground/10">
@@ -36,8 +34,6 @@ const Footer = () => {
           </p>
         </div>
       </footer>
-    </>
-  );
+    </>;
 };
-
 export default Footer;
