@@ -10,15 +10,11 @@ import {
 const sizeDataCM = [
   { size: "S", length: 68, chest: 56, shoulder: 50 },
   { size: "M", length: 70, chest: 58, shoulder: 52 },
-  { size: "L", length: 72, chest: 60, shoulder: 54 },
-  { size: "XL", length: 74, chest: 62, shoulder: 56 },
 ];
 
 const sizeDataInch = [
   { size: "S", length: 26.8, chest: 22, shoulder: 19.7 },
   { size: "M", length: 27.6, chest: 22.8, shoulder: 20.5 },
-  { size: "L", length: 28.3, chest: 23.6, shoulder: 21.3 },
-  { size: "XL", length: 29.1, chest: 24.4, shoulder: 22 },
 ];
 
 const SizeChart = () => {

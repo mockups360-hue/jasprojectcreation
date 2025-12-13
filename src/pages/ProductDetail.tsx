@@ -4,7 +4,7 @@ import { Minus, Plus } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SizeChart from "@/components/SizeChart";
-import { getProductById } from "@/data/products";
+import { getProductById, products } from "@/data/products";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -96,14 +96,6 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Stock */}
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500"></span>
-              <span className="font-body text-sm text-muted-foreground">
-                There are {product.stock} products left
-              </span>
-            </div>
-
             {/* Size Chart */}
             <SizeChart />
 
@@ -132,6 +124,42 @@ const ProductDetail = () => {
             <button className="w-full bg-charcoal text-primary-foreground rounded-full py-4 font-body text-sm hover:opacity-90 transition-opacity">
               Buy it now
             </button>
+          </div>
+        </div>
+
+        {/* Shop More Products */}
+        <div className="mt-16">
+          <h2 className="font-display text-2xl md:text-3xl mb-8">Shop more products</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {products
+              .filter((p) => p.id !== product.id)
+              .map((otherProduct) => (
+                <Link key={otherProduct.id} to={`/product/${otherProduct.id}`} className="block group">
+                  <div className="relative aspect-[3/4] overflow-hidden bg-background">
+                    <img
+                      src={otherProduct.image}
+                      alt={otherProduct.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    {otherProduct.discount && (
+                      <span className="absolute top-4 right-4 bg-accent text-accent-foreground text-xs font-medium px-3 py-1.5 rounded-full">
+                        -{otherProduct.discount}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-4 space-y-1">
+                    <h3 className="font-display text-lg">{otherProduct.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="font-display text-sm">LE {otherProduct.price.toLocaleString()}</span>
+                      {otherProduct.originalPrice && (
+                        <span className="font-display text-sm text-muted-foreground line-through">
+                          LE {otherProduct.originalPrice.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
           </div>
         </div>
       </main>
