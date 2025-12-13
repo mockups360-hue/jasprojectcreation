@@ -1,16 +1,20 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Minus, Plus } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SizeChart from "@/components/SizeChart";
 import { getProductById, products } from "@/data/products";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "@/hooks/use-toast";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const product = getProductById(id || "");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
+  const { addToCart } = useCart();
 
   if (!product) {
     return (
@@ -26,6 +30,38 @@ const ProductDetail = () => {
       </div>
     );
   }
+
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      toast({ title: "Please select a size", variant: "destructive" });
+      return;
+    }
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      size: selectedSize,
+      quantity,
+      image: product.image,
+    });
+    toast({ title: "Added to cart", description: `${product.name} (${selectedSize}) x${quantity}` });
+  };
+
+  const handleBuyNow = () => {
+    if (!selectedSize) {
+      toast({ title: "Please select a size", variant: "destructive" });
+      return;
+    }
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      size: selectedSize,
+      quantity,
+      image: product.image,
+    });
+    navigate("/checkout");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -116,12 +152,18 @@ const ProductDetail = () => {
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
-              <button className="flex-1 border border-border rounded-full py-3 px-6 font-body text-sm hover:bg-secondary transition-colors">
+              <button
+                onClick={handleAddToCart}
+                className="flex-1 border border-border rounded-full py-3 px-6 font-body text-sm hover:bg-secondary transition-colors"
+              >
                 Add to cart - LE {(product.price * quantity).toLocaleString()}.00
               </button>
             </div>
 
-            <button className="w-full bg-charcoal text-primary-foreground rounded-full py-4 font-body text-sm hover:opacity-90 transition-opacity">
+            <button
+              onClick={handleBuyNow}
+              className="w-full bg-charcoal text-primary-foreground rounded-full py-4 font-body text-sm hover:opacity-90 transition-opacity"
+            >
               Buy it now
             </button>
           </div>
