@@ -23,7 +23,9 @@ const Categories = () => {
       </h2>
       
       <div className="space-y-0">
-        {categories.map((category, index) => {})}
+        {categories.map((category, index) => (
+          <div key={index} className="py-2">{category.name}</div>
+        ))}
         
         <Link to="/shop" className="block w-full py-4 mt-6 text-center border border-charcoal rounded-full font-body text-sm font-medium hover:bg-charcoal hover:text-primary-foreground transition-colors">
           shop all

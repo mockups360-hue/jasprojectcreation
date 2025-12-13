@@ -1,5 +1,5 @@
-import jasprojectGreen from "@/assets/jasproject-green.jpg";
-import jasprojectBrown from "@/assets/jasproject-brown.jpg";
+import jasprojectGreen from "@/assets/jasproject-green.png";
+import jasprojectBrown from "@/assets/jasproject-brown.png";
 
 export interface Product {
   id: string;
