@@ -18,10 +18,8 @@ export const products: Product[] = [
   {
     id: "green",
     name: "JASPROJECT-GREEN",
-    price: 1200,
-    originalPrice: 1400,
+    price: 1250,
     image: jasprojectGreen,
-    discount: 14,
     description: [
       "- premium fleece zip-up hoodie",
       "- relaxed fit / heavyweight fabric",
@@ -34,10 +32,8 @@ export const products: Product[] = [
   {
     id: "brown",
     name: "JASPROJECT-BROWN",
-    price: 1200,
-    originalPrice: 1400,
+    price: 1250,
     image: jasprojectBrown,
-    discount: 14,
     description: [
       "- premium fleece zip-up hoodie",
       "- relaxed fit / heavyweight fabric",
