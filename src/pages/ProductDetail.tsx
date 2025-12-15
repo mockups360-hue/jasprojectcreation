@@ -159,9 +159,7 @@ const ProductDetail = () => {
                     <h3 className="font-display text-lg">{otherProduct.name}</h3>
                     <div className="flex items-center gap-2">
                       <span className="font-display text-sm">LE {otherProduct.price.toLocaleString()}</span>
-                      {otherProduct.originalPrice && <span className="font-display text-sm text-muted-foreground line-through">
-                          LE {otherProduct.originalPrice.toLocaleString()}
-                        </span>}
+                      {otherProduct.originalPrice}
                     </div>
                   </div>
                 </Link>)}
