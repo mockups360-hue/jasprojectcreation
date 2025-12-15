@@ -5,7 +5,7 @@ const Hero = () => {
   return <section className="container py-6">
       <div className="relative rounded-2xl overflow-hidden bg-secondary">
         <div className="relative">
-          <img alt="Fall/Winter 2026 Collection" className="w-full h-auto" src="/lovable-uploads/4ad25dab-4681-4935-8ee1-1830f81cb9bc.jpg" />
+          <img alt="Fall/Winter 2026 Collection" className="w-full h-auto" src="/lovable-uploads/be3cdec7-8019-43c5-b6c4-f74eaa8f7a0e.jpg" />
           
           {/* Overlay Content */}
           <div className="absolute inset-0 flex flex-col items-end justify-end text-center p-6 pb-12">
