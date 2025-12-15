@@ -4,8 +4,8 @@ import heroImage from "@/assets/hero-model.jpg";
 const Hero = () => {
   return <section className="container py-6">
       <div className="relative rounded-2xl overflow-hidden bg-secondary">
-        <div className="aspect-[3/4] md:aspect-[16/9] lg:aspect-[21/9] relative">
-          <img alt="Fall/Winter 2026 Collection" className="w-full h-full object-cover object-top" src="/lovable-uploads/09d7232b-e048-43c4-abfc-b296e4782c84.png" />
+        <div className="aspect-[3/4] md:aspect-[8/3] lg:aspect-[7/2] relative">
+          <img alt="Fall/Winter 2026 Collection" className="w-full h-full object-cover object-top md:object-center" src="/lovable-uploads/09d7232b-e048-43c4-abfc-b296e4782c84.png" />
           
           {/* Overlay Content */}
           <div className="absolute inset-0 flex flex-col items-end justify-end text-center p-6 pb-12">
