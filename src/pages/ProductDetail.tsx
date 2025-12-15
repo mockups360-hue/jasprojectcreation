@@ -99,9 +99,7 @@ const ProductDetail = () => {
               <span className="font-body text-xl font-medium">
                 LE {product.price.toLocaleString()}.00
               </span>
-              {product.originalPrice && <span className="font-body text-xl text-muted-foreground line-through">
-                  LE {product.originalPrice.toLocaleString()}.00
-                </span>}
+              {product.originalPrice}
             </div>
 
             {/* Description */}
