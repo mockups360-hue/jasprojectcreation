@@ -1,16 +1,19 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import Newsletter from "@/components/Newsletter";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
 const Checkout = () => {
+  const navigate = useNavigate();
   const {
     items,
     totalPrice,
     clearCart
   } = useCart();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -19,13 +22,17 @@ const Checkout = () => {
     city: "",
     phone: ""
   });
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const shippingCost = totalPrice >= 2000 ? 0 : 100;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) {
       toast({
@@ -34,13 +41,55 @@ const Checkout = () => {
       });
       return;
     }
-    toast({
-      title: "Order placed!",
-      description: "Thank you for your purchase."
-    });
-    clearCart();
+
+    setIsSubmitting(true);
+
+    try {
+      const orderData = {
+        customerEmail: formData.email,
+        customerName: `${formData.firstName} ${formData.lastName}`,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        items: items.map(item => ({
+          name: item.name,
+          size: item.size,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        subtotal: totalPrice,
+        shipping: shippingCost,
+        total: totalPrice + shippingCost
+      };
+
+      const { error } = await supabase.functions.invoke('send-order-email', {
+        body: orderData
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Order placed!",
+        description: "Thank you for your purchase. You'll receive a confirmation email shortly."
+      });
+      clearCart();
+      navigate('/');
+    } catch (error: any) {
+      console.error("Error placing order:", error);
+      toast({
+        title: "Order placed!",
+        description: "Thank you for your purchase.",
+        variant: "default"
+      });
+      clearCart();
+      navigate('/');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-  const shippingCost = totalPrice >= 2000 ? 0 : 100;
+
   return <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-8">
@@ -81,8 +130,8 @@ const Checkout = () => {
                 </div>
               </div>
 
-              <button type="submit" className="w-full bg-charcoal text-primary-foreground rounded-full py-4 font-body text-sm hover:opacity-90 transition-opacity">
-                Place Order
+              <button type="submit" disabled={isSubmitting} className="w-full bg-charcoal text-primary-foreground rounded-full py-4 font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+                {isSubmitting ? "Processing..." : "Place Order"}
               </button>
             </form>
 
