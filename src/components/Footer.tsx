@@ -25,10 +25,9 @@ const Footer = () => {
               Instagram
             </a>
           </div>
-          <p className="font-display text-sm text-primary-foreground/70 mb-4">email us</p>
           <div className="flex flex-wrap gap-4 mb-8">
             <a href="mailto:jasproject.co@gmail.com" className="font-display text-sm font-medium hover:text-primary-foreground/70 transition-colors">
-              jasproject.co@gmail.com
+              Email
             </a>
           </div>
           

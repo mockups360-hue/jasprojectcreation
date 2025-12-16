@@ -1,14 +1,21 @@
 import { Search, Menu, X, User } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import CartSheet from "./CartSheet";
 import SearchDialog from "./SearchDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   
   return <>
       {/* Main Header */}
@@ -29,14 +36,38 @@ const Header = () => {
             
             <CartSheet />
 
-            {/* Account icon - visible on all screen sizes */}
-            <Link 
-              to={user ? "/orders" : "/auth"} 
-              className="p-2 hover:bg-secondary rounded-full transition-colors"
-              aria-label={user ? "My Orders" : "Login"}
-            >
-              <User className="w-5 h-5" />
-            </Link>
+            {/* Account dropdown - visible on all screen sizes */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button 
+                  className="p-2 hover:bg-secondary rounded-full transition-colors"
+                  aria-label="Account"
+                >
+                  <User className="w-5 h-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-background border border-border">
+                {user ? (
+                  <>
+                    <DropdownMenuItem onClick={() => navigate("/orders")} className="cursor-pointer">
+                      Orders
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
+                      Logout
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem onClick={() => navigate("/auth")} className="cursor-pointer">
+                      Login
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/auth?mode=signup")} className="cursor-pointer">
+                      Sign up
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <button className="p-2 hover:bg-secondary rounded-full transition-colors md:hidden" onClick={() => setIsMenuOpen(true)} aria-label="Menu">
               <Menu className="w-5 h-5" />
