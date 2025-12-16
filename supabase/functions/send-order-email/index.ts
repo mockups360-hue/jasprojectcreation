@@ -214,7 +214,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send notification to owner
     const ownerEmailResponse = await sendEmail(
       ["jasproject.co@gmail.com"],
-      "JASPROJECT Orders <onboarding@resend.dev>",
+      "JASPROJECT Orders <orders@jasproject.store>",
       `New Order from ${orderData.customerName} - LE ${orderData.total.toLocaleString()}`,
       generateOwnerEmailHtml(orderData)
     );
@@ -223,7 +223,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send confirmation to customer
     const customerEmailResponse = await sendEmail(
       [orderData.customerEmail],
-      "JASPROJECT <onboarding@resend.dev>",
+      "JASPROJECT <orders@jasproject.store>",
       "Your JASPROJECT Order Confirmation",
       generateCustomerEmailHtml(orderData)
     );
