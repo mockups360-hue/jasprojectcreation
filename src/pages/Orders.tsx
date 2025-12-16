@@ -83,13 +83,26 @@ const Orders = () => {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
       case "confirmed":
-        return "bg-blue-100 text-blue-800";
-      case "shipped":
-        return "bg-purple-100 text-purple-800";
-      case "delivered":
         return "bg-green-100 text-green-800";
+      case "shipped":
+        return "bg-blue-100 text-blue-800";
+      case "delivered":
+        return "bg-purple-100 text-purple-800";
       default:
         return "bg-secondary text-foreground";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return "Order Confirmed";
+      case "shipped":
+        return "Shipped";
+      case "delivered":
+        return "Delivered";
+      default:
+        return status;
     }
   };
 
@@ -172,11 +185,11 @@ const Orders = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-body capitalize ${getStatusColor(
+                        className={`px-3 py-1 rounded-full text-xs font-body ${getStatusColor(
                           order.status
                         )}`}
                       >
-                        {order.status}
+                        {getStatusLabel(order.status)}
                       </span>
                       <span className="px-3 py-1 rounded-full text-xs font-body bg-secondary">
                         Cash on Delivery
