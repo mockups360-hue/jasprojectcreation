@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Banknote } from "lucide-react";
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     items,
     totalPrice,
@@ -22,6 +25,13 @@ const Checkout = () => {
     city: "",
     phone: ""
   });
+
+  // Pre-fill email if user is logged in
+  useEffect(() => {
+    if (user?.email) {
+      setFormData(prev => ({ ...prev, email: user.email || "" }));
+    }
+  }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -45,7 +55,45 @@ const Checkout = () => {
     setIsSubmitting(true);
 
     try {
-      const orderData = {
+      // Create order in database
+      const { data: orderData, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user?.id || null,
+          customer_email: formData.email,
+          customer_name: `${formData.firstName} ${formData.lastName}`,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          subtotal: totalPrice,
+          shipping: shippingCost,
+          total: totalPrice + shippingCost,
+          status: "pending",
+          payment_method: "cash_on_delivery"
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = items.map(item => ({
+        order_id: orderData.id,
+        product_name: item.name,
+        product_size: item.size,
+        quantity: item.quantity,
+        price: item.price
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Send confirmation emails
+      const emailData = {
+        orderId: orderData.id,
         customerEmail: formData.email,
         customerName: `${formData.firstName} ${formData.lastName}`,
         phone: formData.phone,
@@ -62,29 +110,25 @@ const Checkout = () => {
         total: totalPrice + shippingCost
       };
 
-      const { error } = await supabase.functions.invoke('send-order-email', {
-        body: orderData
+      await supabase.functions.invoke('send-order-email', {
+        body: emailData
       });
-
-      if (error) {
-        throw error;
-      }
 
       toast({
         title: "Order placed!",
-        description: "Thank you for your purchase. You'll receive a confirmation email shortly."
+        description: user 
+          ? "Thank you for your purchase. View your order in My Orders."
+          : "Thank you for your purchase. You'll receive a confirmation email shortly."
       });
       clearCart();
-      navigate('/');
+      navigate(user ? '/orders' : '/');
     } catch (error: any) {
       console.error("Error placing order:", error);
       toast({
-        title: "Order placed!",
-        description: "Thank you for your purchase.",
-        variant: "default"
+        title: "Error",
+        description: "There was a problem placing your order. Please try again.",
+        variant: "destructive"
       });
-      clearCart();
-      navigate('/');
     } finally {
       setIsSubmitting(false);
     }
@@ -130,9 +174,29 @@ const Checkout = () => {
                 </div>
               </div>
 
+              {/* Payment Method */}
+              <div>
+                <h2 className="font-display text-xl mb-4">Payment Method</h2>
+                <div className="border border-charcoal rounded-2xl p-4 flex items-center gap-4 bg-secondary/30">
+                  <div className="w-10 h-10 rounded-full bg-charcoal text-primary-foreground flex items-center justify-center">
+                    <Banknote className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-display text-sm">Cash on Delivery</p>
+                    <p className="font-body text-xs text-muted-foreground">Pay when you receive your order</p>
+                  </div>
+                </div>
+              </div>
+
               <button type="submit" disabled={isSubmitting} className="w-full bg-charcoal text-primary-foreground rounded-full py-4 font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
                 {isSubmitting ? "Processing..." : "Place Order"}
               </button>
+
+              {!user && (
+                <p className="text-center font-body text-xs text-muted-foreground">
+                  <Link to="/auth" className="underline hover:text-foreground">Sign in</Link> to track your orders
+                </p>
+              )}
             </form>
 
             {/* Order Summary */}

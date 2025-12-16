@@ -1,10 +1,14 @@
-import { Search, Menu, X } from "lucide-react";
+import { Search, Menu, X, User } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import CartSheet from "./CartSheet";
+import SearchDialog from "./SearchDialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { user, signOut } = useAuth();
   
   return <>
       {/* Main Header */}
@@ -15,11 +19,23 @@ const Header = () => {
           </Link>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-secondary rounded-full transition-colors" aria-label="Search">
+            <button 
+              className="p-2 hover:bg-secondary rounded-full transition-colors" 
+              aria-label="Search"
+              onClick={() => setIsSearchOpen(true)}
+            >
               <Search className="w-5 h-5" />
             </button>
             
             <CartSheet />
+
+            <Link 
+              to={user ? "/orders" : "/auth"} 
+              className="p-2 hover:bg-secondary rounded-full transition-colors hidden md:flex"
+              aria-label={user ? "My Orders" : "Login"}
+            >
+              <User className="w-5 h-5" />
+            </Link>
 
             <button className="p-2 hover:bg-secondary rounded-full transition-colors md:hidden" onClick={() => setIsMenuOpen(true)} aria-label="Menu">
               <Menu className="w-5 h-5" />
@@ -28,7 +44,6 @@ const Header = () => {
             <nav className="hidden md:flex items-center gap-6">
               <Link to="/" className="text-sm font-medium hover:text-muted-foreground transition-colors">home</Link>
               <Link to="/shop" className="text-sm font-medium hover:text-muted-foreground transition-colors">shop</Link>
-              <Link to="/about" className="text-sm font-medium hover:text-muted-foreground transition-colors">about</Link>
             </nav>
           </div>
         </div>
@@ -82,14 +97,30 @@ const Header = () => {
             <Link to="/shop" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
               shop
             </Link>
-            <Link to="/about" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
-              about
-            </Link>
-            <Link to="/login" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
-              login
-            </Link>
+            {user ? (
+              <>
+                <Link to="/orders" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
+                  my orders
+                </Link>
+                <button 
+                  onClick={() => {
+                    signOut();
+                    setIsMenuOpen(false);
+                  }} 
+                  className="block text-lg font-body py-2 border-b border-border/30 w-full text-left text-muted-foreground"
+                >
+                  logout
+                </button>
+              </>
+            ) : (
+              <Link to="/auth" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
+                login
+              </Link>
+            )}
           </nav>
         </div>}
+
+      <SearchDialog open={isSearchOpen} onOpenChange={setIsSearchOpen} />
     </>;
 };
 export default Header;

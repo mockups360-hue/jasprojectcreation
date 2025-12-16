@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 interface OrderEmailRequest {
+  orderId: string;
   customerEmail: string;
   customerName: string;
   phone: string;
@@ -51,6 +52,11 @@ const generateOwnerEmailHtml = (data: OrderEmailRequest) => `
       </div>
       
       <div style="padding: 30px;">
+        <div style="background-color: #f5f5f0; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+          <p style="margin: 0; color: #666666; font-size: 13px;">Order ID</p>
+          <p style="margin: 5px 0 0 0; color: #2d2d2d; font-weight: 600; font-size: 14px;">#${data.orderId.slice(0, 8).toUpperCase()}</p>
+        </div>
+        
         <h2 style="color: #2d2d2d; font-size: 18px; margin: 0 0 20px 0; font-weight: 500;">Customer Information</h2>
         <table style="width: 100%; margin-bottom: 30px;">
           <tr>
@@ -68,6 +74,10 @@ const generateOwnerEmailHtml = (data: OrderEmailRequest) => `
           <tr>
             <td style="padding: 8px 0; color: #666666;">Address:</td>
             <td style="padding: 8px 0; color: #2d2d2d;">${data.address}, ${data.city}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #666666;">Payment:</td>
+            <td style="padding: 8px 0; color: #2d2d2d;">Cash on Delivery</td>
           </tr>
         </table>
         
@@ -126,7 +136,12 @@ const generateCustomerEmailHtml = (data: OrderEmailRequest) => `
       
       <div style="padding: 30px;">
         <h2 style="color: #2d2d2d; font-size: 20px; margin: 0 0 15px 0; font-weight: 500;">Thank you for your order, ${data.customerName.split(' ')[0]}!</h2>
-        <p style="color: #666666; line-height: 1.6; margin: 0 0 30px 0;">We've received your order and will begin processing it shortly. You'll receive another email when your order ships.</p>
+        <p style="color: #666666; line-height: 1.6; margin: 0 0 20px 0;">We've received your order and will begin processing it shortly. You'll receive another email when your order ships.</p>
+        
+        <div style="background-color: #f5f5f0; padding: 15px; border-radius: 6px; margin-bottom: 25px;">
+          <p style="margin: 0; color: #666666; font-size: 13px;">Order ID</p>
+          <p style="margin: 5px 0 0 0; color: #2d2d2d; font-weight: 600; font-size: 14px;">#${data.orderId.slice(0, 8).toUpperCase()}</p>
+        </div>
         
         <h3 style="color: #2d2d2d; font-size: 16px; margin: 0 0 15px 0; font-weight: 500;">Order Summary</h3>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
@@ -152,6 +167,10 @@ const generateCustomerEmailHtml = (data: OrderEmailRequest) => `
             <tr>
               <td style="padding: 5px 0; color: #666666;">Shipping:</td>
               <td style="padding: 5px 0; text-align: right; color: #2d2d2d;">${data.shipping === 0 ? 'Free' : `LE ${data.shipping}`}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; color: #666666;">Payment:</td>
+              <td style="padding: 5px 0; text-align: right; color: #2d2d2d;">Cash on Delivery</td>
             </tr>
             <tr>
               <td style="padding: 10px 0 0 0; color: #2d2d2d; font-weight: 600; font-size: 18px; border-top: 2px solid #e5e5e5;">Total:</td>
@@ -215,7 +234,7 @@ const handler = async (req: Request): Promise<Response> => {
     const ownerEmailResponse = await sendEmail(
       ["jasproject.co@gmail.com"],
       "JASPROJECT Orders <orders@jasproject.store>",
-      `New Order from ${orderData.customerName} - LE ${orderData.total.toLocaleString()}`,
+      `New Order #${orderData.orderId.slice(0, 8).toUpperCase()} from ${orderData.customerName} - LE ${orderData.total.toLocaleString()}`,
       generateOwnerEmailHtml(orderData)
     );
     console.log("Owner email sent:", ownerEmailResponse);
@@ -224,7 +243,7 @@ const handler = async (req: Request): Promise<Response> => {
     const customerEmailResponse = await sendEmail(
       [orderData.customerEmail],
       "JASPROJECT <orders@jasproject.store>",
-      "Your JASPROJECT Order Confirmation",
+      `Your JASPROJECT Order Confirmation #${orderData.orderId.slice(0, 8).toUpperCase()}`,
       generateCustomerEmailHtml(orderData)
     );
     console.log("Customer email sent:", customerEmailResponse);
