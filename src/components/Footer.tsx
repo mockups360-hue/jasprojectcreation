@@ -20,12 +20,15 @@ const Footer = () => {
         {/* Social & Copyright */}
         <div className="container py-8 border-t border-primary-foreground/10">
           <p className="font-display text-sm text-primary-foreground/70 mb-4">follow us on social media</p>
-          <div className="flex flex-wrap gap-4 mb-8">
-            <a href="mailto:jasproject.co@gmail.com" className="font-display text-sm font-medium hover:text-primary-foreground/70 transition-colors">
-              Email
-            </a>
+          <div className="flex flex-wrap gap-4 mb-6">
             <a href="https://instagram.com/jas__project" target="_blank" rel="noopener noreferrer" className="font-display text-sm font-medium hover:text-primary-foreground/70 transition-colors">
               Instagram
+            </a>
+          </div>
+          <p className="font-display text-sm text-primary-foreground/70 mb-4">email us</p>
+          <div className="flex flex-wrap gap-4 mb-8">
+            <a href="mailto:jasproject.co@gmail.com" className="font-display text-sm font-medium hover:text-primary-foreground/70 transition-colors">
+              jasproject.co@gmail.com
             </a>
           </div>
           

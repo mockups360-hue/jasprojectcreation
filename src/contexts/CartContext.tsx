@@ -17,12 +17,16 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  directCheckoutItem: CartItem | null;
+  setDirectCheckoutItem: (item: CartItem | null) => void;
+  clearDirectCheckout: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [directCheckoutItem, setDirectCheckoutItem] = useState<CartItem | null>(null);
 
   const addToCart = (item: CartItem) => {
     setItems((prev) => {
@@ -55,13 +59,26 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const clearCart = () => setItems([]);
+  
+  const clearDirectCheckout = () => setDirectCheckoutItem(null);
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice }}
+      value={{ 
+        items, 
+        addToCart, 
+        removeFromCart, 
+        updateQuantity, 
+        clearCart, 
+        totalItems, 
+        totalPrice,
+        directCheckoutItem,
+        setDirectCheckoutItem,
+        clearDirectCheckout
+      }}
     >
       {children}
     </CartContext.Provider>

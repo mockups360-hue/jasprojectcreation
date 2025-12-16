@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Banknote } from "lucide-react";
+import { Banknote, Check } from "lucide-react";
 import { z } from "zod";
 
 const emailSchema = z.string().trim().email("Invalid email address").max(255);
@@ -14,12 +14,24 @@ const passwordSchema = z.string().min(6, "Password must be at least 6 characters
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isDirectCheckout = searchParams.get('direct') === 'true';
+  
   const { user, signUp, signIn } = useAuth();
   const {
-    items,
-    totalPrice,
-    clearCart
+    items: cartItems,
+    totalPrice: cartTotalPrice,
+    clearCart,
+    directCheckoutItem,
+    clearDirectCheckout
   } = useCart();
+  
+  // Use direct checkout item or cart items
+  const items = isDirectCheckout && directCheckoutItem ? [directCheckoutItem] : cartItems;
+  const totalPrice = isDirectCheckout && directCheckoutItem 
+    ? directCheckoutItem.price * directCheckoutItem.quantity 
+    : cartTotalPrice;
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isNewUser, setIsNewUser] = useState(true);
   const [formData, setFormData] = useState({
@@ -38,6 +50,15 @@ const Checkout = () => {
       setFormData(prev => ({ ...prev, email: user.email || "" }));
     }
   }, [user]);
+
+  // Clean up direct checkout if navigating away
+  useEffect(() => {
+    return () => {
+      if (isDirectCheckout) {
+        clearDirectCheckout();
+      }
+    };
+  }, [isDirectCheckout, clearDirectCheckout]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -181,7 +202,14 @@ const Checkout = () => {
         title: "Order confirmed!",
         description: "Thank you for your purchase. View your order in My Orders."
       });
-      clearCart();
+      
+      // Clear appropriate cart
+      if (isDirectCheckout) {
+        clearDirectCheckout();
+      } else {
+        clearCart();
+      }
+      
       navigate('/orders');
     } catch (error: any) {
       console.error("Error placing order:", error);
@@ -299,13 +327,16 @@ const Checkout = () => {
               {/* Payment Method */}
               <div>
                 <h2 className="font-display text-xl mb-4">Payment Method</h2>
-                <div className="border border-charcoal rounded-2xl p-4 flex items-center gap-4 bg-secondary/30">
+                <div className="border-2 border-charcoal rounded-2xl p-4 flex items-center gap-4 bg-secondary/30">
                   <div className="w-10 h-10 rounded-full bg-charcoal text-primary-foreground flex items-center justify-center">
                     <Banknote className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="font-display text-sm">Cash on Delivery</p>
                     <p className="font-body text-xs text-muted-foreground">Pay when you receive your order</p>
+                  </div>
+                  <div className="w-6 h-6 rounded-full bg-charcoal text-primary-foreground flex items-center justify-center">
+                    <Check className="w-4 h-4" />
                   </div>
                 </div>
               </div>

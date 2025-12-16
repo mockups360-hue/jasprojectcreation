@@ -18,7 +18,8 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const {
-    addToCart
+    addToCart,
+    setDirectCheckoutItem
   } = useCart();
   if (!product) {
     return <div className="min-h-screen bg-background">
@@ -61,7 +62,8 @@ const ProductDetail = () => {
       });
       return;
     }
-    addToCart({
+    // Set direct checkout item instead of adding to cart
+    setDirectCheckoutItem({
       id: product.id,
       name: product.name,
       price: product.price,
@@ -69,7 +71,7 @@ const ProductDetail = () => {
       quantity,
       image: product.image
     });
-    navigate("/checkout");
+    navigate("/checkout?direct=true");
   };
   return <div className="min-h-screen bg-background">
       <Header />
