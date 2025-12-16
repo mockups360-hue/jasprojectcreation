@@ -4,6 +4,14 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface OrderItem {
   id: string;
@@ -35,6 +43,8 @@ const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -42,15 +52,39 @@ const Orders = () => {
     }
   }, [user, loading, navigate]);
 
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (!error && data) {
+        setIsAdmin(true);
+      }
+    };
+
+    if (user) {
+      checkAdminRole();
+    }
+  }, [user]);
+
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user) return;
 
-      const { data: ordersData, error: ordersError } = await supabase
+      // Admin sees all orders, regular users see only their own
+      let query = supabase
         .from("orders")
         .select("*")
-        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
+
+      const { data: ordersData, error: ordersError } = await query;
 
       if (ordersError) {
         console.error("Error fetching orders:", ordersError);
@@ -76,7 +110,60 @@ const Orders = () => {
     if (user) {
       fetchOrders();
     }
-  }, [user]);
+  }, [user, isAdmin]);
+
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    setUpdatingStatus(orderId);
+    
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    try {
+      // Update status in database
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: newStatus })
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      // Send status update email to customer
+      await supabase.functions.invoke('send-status-update-email', {
+        body: {
+          orderId: order.id,
+          customerEmail: order.customer_email,
+          customerName: order.customer_name,
+          newStatus: newStatus,
+          items: order.items?.map(item => ({
+            name: item.product_name,
+            size: item.product_size,
+            quantity: item.quantity,
+            price: item.price
+          })) || [],
+          total: order.total
+        }
+      });
+
+      // Update local state
+      setOrders(prev => prev.map(o => 
+        o.id === orderId ? { ...o, status: newStatus } : o
+      ));
+
+      toast({
+        title: "Status updated",
+        description: `Order status changed to ${getStatusLabel(newStatus)}. Customer has been notified.`
+      });
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update order status",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -84,10 +171,12 @@ const Orders = () => {
         return "bg-yellow-100 text-yellow-800";
       case "confirmed":
         return "bg-green-100 text-green-800";
-      case "shipped":
+      case "out_for_delivery":
         return "bg-blue-100 text-blue-800";
       case "delivered":
         return "bg-purple-100 text-purple-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-secondary text-foreground";
     }
@@ -97,10 +186,12 @@ const Orders = () => {
     switch (status) {
       case "confirmed":
         return "Order Confirmed";
-      case "shipped":
-        return "Shipped";
+      case "out_for_delivery":
+        return "Out for Delivery";
       case "delivered":
         return "Delivered";
+      case "cancelled":
+        return "Cancelled";
       default:
         return status;
     }
@@ -133,12 +224,17 @@ const Orders = () => {
             Home
           </Link>
           <span className="mx-2">/</span>
-          <span className="text-foreground">My Orders</span>
+          <span className="text-foreground">{isAdmin ? "All Orders" : "My Orders"}</span>
         </nav>
 
-        <h1 className="font-display text-4xl md:text-5xl font-light mb-8">
-          My Orders
+        <h1 className="font-display text-4xl md:text-5xl font-light mb-2">
+          {isAdmin ? "All Orders" : "My Orders"}
         </h1>
+        {isAdmin && (
+          <p className="font-body text-sm text-muted-foreground mb-8">
+            Admin view - You can manage all orders
+          </p>
+        )}
 
         {loadingOrders ? (
           <div className="text-center py-16">
@@ -147,14 +243,16 @@ const Orders = () => {
         ) : orders.length === 0 ? (
           <div className="text-center py-16">
             <p className="font-body text-muted-foreground mb-4">
-              You haven't placed any orders yet
+              {isAdmin ? "No orders yet" : "You haven't placed any orders yet"}
             </p>
-            <Link
-              to="/shop"
-              className="inline-block bg-charcoal text-primary-foreground rounded-full py-3 px-8 font-body text-sm hover:opacity-90 transition-opacity"
-            >
-              Start Shopping
-            </Link>
+            {!isAdmin && (
+              <Link
+                to="/shop"
+                className="inline-block bg-charcoal text-primary-foreground rounded-full py-3 px-8 font-body text-sm hover:opacity-90 transition-opacity"
+              >
+                Start Shopping
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -182,15 +280,38 @@ const Orders = () => {
                       <p className="font-body text-sm text-muted-foreground">
                         {formatDate(order.created_at)}
                       </p>
+                      {isAdmin && (
+                        <p className="font-body text-sm text-foreground mt-1">
+                          {order.customer_name} - {order.customer_email}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-body ${getStatusColor(
-                          order.status
-                        )}`}
-                      >
-                        {getStatusLabel(order.status)}
-                      </span>
+                    <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                      {isAdmin ? (
+                        <Select
+                          value={order.status}
+                          onValueChange={(value) => handleStatusChange(order.id, value)}
+                          disabled={updatingStatus === order.id}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="confirmed">Order Confirmed</SelectItem>
+                            <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
+                            <SelectItem value="delivered">Delivered</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-body ${getStatusColor(
+                            order.status
+                          )}`}
+                        >
+                          {getStatusLabel(order.status)}
+                        </span>
+                      )}
                       <span className="px-3 py-1 rounded-full text-xs font-body bg-secondary">
                         Cash on Delivery
                       </span>
