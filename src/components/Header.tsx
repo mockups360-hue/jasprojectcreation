@@ -29,9 +29,10 @@ const Header = () => {
             
             <CartSheet />
 
+            {/* Account icon - visible on all screen sizes */}
             <Link 
               to={user ? "/orders" : "/auth"} 
-              className="p-2 hover:bg-secondary rounded-full transition-colors hidden md:flex"
+              className="p-2 hover:bg-secondary rounded-full transition-colors"
               aria-label={user ? "My Orders" : "Login"}
             >
               <User className="w-5 h-5" />
@@ -97,25 +98,16 @@ const Header = () => {
             <Link to="/shop" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
               shop
             </Link>
-            {user ? (
-              <>
-                <Link to="/orders" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
-                  my orders
-                </Link>
-                <button 
-                  onClick={() => {
-                    signOut();
-                    setIsMenuOpen(false);
-                  }} 
-                  className="block text-lg font-body py-2 border-b border-border/30 w-full text-left text-muted-foreground"
-                >
-                  logout
-                </button>
-              </>
-            ) : (
-              <Link to="/auth" className="block text-lg font-body py-2 border-b border-border/30" onClick={() => setIsMenuOpen(false)}>
-                login
-              </Link>
+            {user && (
+              <button 
+                onClick={() => {
+                  signOut();
+                  setIsMenuOpen(false);
+                }} 
+                className="block text-lg font-body py-2 border-b border-border/30 w-full text-left text-muted-foreground"
+              >
+                logout
+              </button>
             )}
           </nav>
         </div>}

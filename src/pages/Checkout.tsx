@@ -7,18 +7,24 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Banknote } from "lucide-react";
+import { z } from "zod";
+
+const emailSchema = z.string().trim().email("Invalid email address").max(255);
+const passwordSchema = z.string().min(6, "Password must be at least 6 characters").max(72);
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signUp, signIn } = useAuth();
   const {
     items,
     totalPrice,
     clearCart
   } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
+    password: "",
     firstName: "",
     lastName: "",
     address: "",
@@ -55,11 +61,68 @@ const Checkout = () => {
     setIsSubmitting(true);
 
     try {
+      let currentUser = user;
+
+      // If not logged in, create account or sign in
+      if (!user) {
+        // Validate inputs
+        emailSchema.parse(formData.email);
+        passwordSchema.parse(formData.password);
+
+        if (isNewUser) {
+          // Create new account
+          const { error: signUpError } = await signUp(
+            formData.email,
+            formData.password,
+            formData.firstName,
+            formData.lastName
+          );
+
+          if (signUpError) {
+            if (signUpError.message.includes("User already registered")) {
+              toast({
+                title: "Account exists",
+                description: "An account with this email already exists. Please sign in instead.",
+                variant: "destructive",
+              });
+              setIsNewUser(false);
+            } else {
+              throw signUpError;
+            }
+            setIsSubmitting(false);
+            return;
+          }
+
+          // Wait for auth state to update
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const { data: { session } } = await supabase.auth.getSession();
+          currentUser = session?.user || null;
+        } else {
+          // Sign in existing user
+          const { error: signInError } = await signIn(formData.email, formData.password);
+          
+          if (signInError) {
+            toast({
+              title: "Sign in failed",
+              description: "Invalid email or password. Please try again.",
+              variant: "destructive",
+            });
+            setIsSubmitting(false);
+            return;
+          }
+
+          // Wait for auth state to update
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const { data: { session } } = await supabase.auth.getSession();
+          currentUser = session?.user || null;
+        }
+      }
+
       // Create order in database
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .insert({
-          user_id: user?.id || null,
+          user_id: currentUser?.id || null,
           customer_email: formData.email,
           customer_name: `${formData.firstName} ${formData.lastName}`,
           phone: formData.phone,
@@ -68,7 +131,7 @@ const Checkout = () => {
           subtotal: totalPrice,
           shipping: shippingCost,
           total: totalPrice + shippingCost,
-          status: "pending",
+          status: "confirmed",
           payment_method: "cash_on_delivery"
         })
         .select()
@@ -115,20 +178,26 @@ const Checkout = () => {
       });
 
       toast({
-        title: "Order placed!",
-        description: user 
-          ? "Thank you for your purchase. View your order in My Orders."
-          : "Thank you for your purchase. You'll receive a confirmation email shortly."
+        title: "Order confirmed!",
+        description: "Thank you for your purchase. View your order in My Orders."
       });
       clearCart();
-      navigate(user ? '/orders' : '/');
+      navigate('/orders');
     } catch (error: any) {
       console.error("Error placing order:", error);
-      toast({
-        title: "Error",
-        description: "There was a problem placing your order. Please try again.",
-        variant: "destructive"
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation error",
+          description: error.errors[0].message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "There was a problem placing your order. Please try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -156,10 +225,63 @@ const Checkout = () => {
           </div> : <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <h2 className="font-display text-xl mb-4">Contact</h2>
-                <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors" />
-              </div>
+              {/* Account Section - Only show if not logged in */}
+              {!user && (
+                <div>
+                  <h2 className="font-display text-xl mb-4">Account</h2>
+                  <p className="font-body text-sm text-muted-foreground mb-4">
+                    {isNewUser 
+                      ? "Create an account to track your orders" 
+                      : "Sign in to your existing account"}
+                  </p>
+                  <div className="space-y-3">
+                    <input 
+                      type="email" 
+                      name="email" 
+                      placeholder="Email" 
+                      value={formData.email} 
+                      onChange={handleChange} 
+                      required 
+                      className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors" 
+                    />
+                    <input 
+                      type="password" 
+                      name="password" 
+                      placeholder="Password (min. 6 characters)" 
+                      value={formData.password} 
+                      onChange={handleChange} 
+                      required 
+                      minLength={6}
+                      className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsNewUser(!isNewUser)}
+                      className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors underline"
+                    >
+                      {isNewUser 
+                        ? "Already have an account? Sign in" 
+                        : "Don't have an account? Create one"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Contact - Show only when logged in */}
+              {user && (
+                <div>
+                  <h2 className="font-display text-xl mb-4">Contact</h2>
+                  <input 
+                    type="email" 
+                    name="email" 
+                    placeholder="Email" 
+                    value={formData.email} 
+                    onChange={handleChange} 
+                    required 
+                    className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors" 
+                  />
+                </div>
+              )}
 
               <div>
                 <h2 className="font-display text-xl mb-4">Shipping Address</h2>
@@ -189,14 +311,8 @@ const Checkout = () => {
               </div>
 
               <button type="submit" disabled={isSubmitting} className="w-full bg-charcoal text-primary-foreground rounded-full py-4 font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
-                {isSubmitting ? "Processing..." : "Place Order"}
+                {isSubmitting ? "Processing..." : user ? "Place Order" : isNewUser ? "Create Account & Place Order" : "Sign In & Place Order"}
               </button>
-
-              {!user && (
-                <p className="text-center font-body text-xs text-muted-foreground">
-                  <Link to="/auth" className="underline hover:text-foreground">Sign in</Link> to track your orders
-                </p>
-              )}
             </form>
 
             {/* Order Summary */}
