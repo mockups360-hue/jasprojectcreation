@@ -67,7 +67,7 @@ const Checkout = () => {
     });
   };
 
-  const shippingCost = totalPrice >= 2000 ? 0 : 100;
+  const shippingCost = totalPrice >= 2000 ? 0 : 65;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,59 +84,34 @@ const Checkout = () => {
     try {
       let currentUser = user;
 
-      // If not logged in, create account or sign in
-      if (!user) {
+      // If not logged in and password provided, create account
+      if (!user && formData.password) {
         // Validate inputs
         emailSchema.parse(formData.email);
         passwordSchema.parse(formData.password);
 
-        if (isNewUser) {
-          // Create new account
-          const { error: signUpError } = await signUp(
-            formData.email,
-            formData.password,
-            formData.firstName,
-            formData.lastName
-          );
+        // Create new account
+        const { error: signUpError } = await signUp(
+          formData.email,
+          formData.password,
+          formData.firstName,
+          formData.lastName
+        );
 
-          if (signUpError) {
-            if (signUpError.message.includes("User already registered")) {
-              toast({
-                title: "Account exists",
-                description: "An account with this email already exists. Please sign in instead.",
-                variant: "destructive",
-              });
-              setIsNewUser(false);
-            } else {
-              throw signUpError;
-            }
-            setIsSubmitting(false);
-            return;
+        if (signUpError) {
+          if (!signUpError.message.includes("User already registered")) {
+            throw signUpError;
           }
-
-          // Wait for auth state to update
-          await new Promise(resolve => setTimeout(resolve, 500));
-          const { data: { session } } = await supabase.auth.getSession();
-          currentUser = session?.user || null;
+          // If user exists, just continue with the order without logging in
         } else {
-          // Sign in existing user
-          const { error: signInError } = await signIn(formData.email, formData.password);
-          
-          if (signInError) {
-            toast({
-              title: "Sign in failed",
-              description: "Invalid email or password. Please try again.",
-              variant: "destructive",
-            });
-            setIsSubmitting(false);
-            return;
-          }
-
           // Wait for auth state to update
           await new Promise(resolve => setTimeout(resolve, 500));
           const { data: { session } } = await supabase.auth.getSession();
           currentUser = session?.user || null;
         }
+      } else if (!user) {
+        // Just validate email for guest checkout
+        emailSchema.parse(formData.email);
       }
 
       // Create order in database
@@ -256,11 +231,9 @@ const Checkout = () => {
               {/* Account Section - Only show if not logged in */}
               {!user && (
                 <div>
-                  <h2 className="font-display text-xl mb-4">Account</h2>
+                  <h2 className="font-display text-xl mb-4">Account (Optional)</h2>
                   <p className="font-body text-sm text-muted-foreground mb-4">
-                    {isNewUser 
-                      ? "Create an account to track your orders" 
-                      : "Sign in to your existing account"}
+                    Create an account to track your orders (optional)
                   </p>
                   <div className="space-y-3">
                     <input 
@@ -275,22 +248,12 @@ const Checkout = () => {
                     <input 
                       type="password" 
                       name="password" 
-                      placeholder="Password (min. 6 characters)" 
+                      placeholder="Password (optional - to create account)" 
                       value={formData.password} 
                       onChange={handleChange} 
-                      required 
                       minLength={6}
-                      className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors" 
+                      className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors bg-muted/30 text-muted-foreground" 
                     />
-                    <button
-                      type="button"
-                      onClick={() => setIsNewUser(!isNewUser)}
-                      className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors underline"
-                    >
-                      {isNewUser 
-                        ? "Already have an account? Sign in" 
-                        : "Don't have an account? Create one"}
-                    </button>
                   </div>
                 </div>
               )}

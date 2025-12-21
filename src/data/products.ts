@@ -17,30 +17,32 @@ export interface Product {
 export const products: Product[] = [
   {
     id: "green",
-    name: "JASPROJECT-GREEN",
-    price: 1250,
+    name: "TERRA EVERBLUE - GREEN ZIP-UP JACKET",
+    price: 1100,
     image: jasprojectGreen,
     description: [
-      "- premium fleece zip-up hoodie",
-      "- relaxed fit / heavyweight fabric",
-      "- puff print logo",
-      "- 100% cotton / 400 gsm"
+      "-Premium fleece zip-up",
+      "-Slightly cropped silhouette",
+      "-Detailed stitching throughout",
+      "-Printed logo detail",
+      "-Unisex fit"
     ],
-    sizes: ["S", "M"],
+    sizes: ["S/M", "L/XL"],
     stock: 24
   },
   {
     id: "brown",
-    name: "JASPROJECT-BROWN",
-    price: 1250,
+    name: "TERRA ROSETTA - BROWN ZIP-UP JACKET",
+    price: 1100,
     image: jasprojectBrown,
     description: [
-      "- premium fleece zip-up hoodie",
-      "- relaxed fit / heavyweight fabric",
-      "- puff print logo",
-      "- 100% cotton / 400 gsm"
+      "-Premium fleece zip-up",
+      "-Slightly cropped silhouette",
+      "-Detailed stitching throughout",
+      "-Printed logo detail",
+      "-Unisex fit"
     ],
-    sizes: ["S", "M"],
+    sizes: ["S/M", "L/XL"],
     stock: 18
   }
 ];

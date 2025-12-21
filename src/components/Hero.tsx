@@ -12,9 +12,12 @@ const Hero = () => {
             <div className="w-full flex flex-col items-center">
               <h1 style={{
               animationDelay: '0.1s'
-            }} className="font-display text-4xl md:text-6xl lg:text-7xl font-light mb-6 animate-slide-up text-gray-200">
-                Fall/Winter 2026
+            }} className="font-display text-4xl md:text-6xl lg:text-7xl font-light mb-2 animate-slide-up text-gray-200">
+                FW'25
               </h1>
+              <p className="font-display text-2xl md:text-3xl lg:text-4xl font-light mb-6 animate-slide-up text-gray-200" style={{ animationDelay: '0.2s' }}>
+                TERRA VOL. 01
+              </p>
               <Link to="/shop" className="group inline-flex items-center gap-2 bg-background/90 backdrop-blur-sm text-foreground px-6 py-3 rounded-full border border-charcoal/20 hover:bg-background transition-all duration-300 animate-fade-in" style={{
               animationDelay: '0.3s'
             }}>

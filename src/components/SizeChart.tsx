@@ -8,13 +8,13 @@ import {
 } from "@/components/ui/dialog";
 
 const sizeDataCM = [
-  { size: "S", length: 68, chest: 56, shoulder: 50 },
-  { size: "M", length: 70, chest: 58, shoulder: 52 },
+  { size: "S/M", length: 60, width: 64 },
+  { size: "L/XL", length: 64, width: 69 },
 ];
 
 const sizeDataInch = [
-  { size: "S", length: 26.8, chest: 22, shoulder: 19.7 },
-  { size: "M", length: 27.6, chest: 22.8, shoulder: 20.5 },
+  { size: "S/M", length: 23.6, width: 25.2 },
+  { size: "L/XL", length: 25.2, width: 27.2 },
 ];
 
 const SizeChart = () => {
@@ -61,8 +61,7 @@ const SizeChart = () => {
               <tr className="border-b border-border">
                 <th className="py-2 px-4 text-left font-body text-sm font-medium">Size</th>
                 <th className="py-2 px-4 text-center font-body text-sm font-medium">Length</th>
-                <th className="py-2 px-4 text-center font-body text-sm font-medium">Chest</th>
-                <th className="py-2 px-4 text-center font-body text-sm font-medium">Shoulder</th>
+                <th className="py-2 px-4 text-center font-body text-sm font-medium">Width</th>
               </tr>
             </thead>
             <tbody>
@@ -70,8 +69,7 @@ const SizeChart = () => {
                 <tr key={row.size} className="border-b border-border">
                   <td className="py-2 px-4 font-body text-sm font-medium">{row.size}</td>
                   <td className="py-2 px-4 text-center font-body text-sm text-accent">{row.length}</td>
-                  <td className="py-2 px-4 text-center font-body text-sm text-accent">{row.chest}</td>
-                  <td className="py-2 px-4 text-center font-body text-sm text-accent">{row.shoulder}</td>
+                  <td className="py-2 px-4 text-center font-body text-sm text-accent">{row.width}</td>
                 </tr>
               ))}
             </tbody>
