@@ -13,7 +13,7 @@ const FeaturedProducts = () => {
 
       <div className="container">
         <h2 className="font-display text-3xl md:text-4xl font-light mb-8">
-          featured products
+          TERRA VOL. 01
         </h2>
       </div>
 
