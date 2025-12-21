@@ -11,7 +11,7 @@ const CartSheet = () => {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <button className="p-2 hover:bg-secondary rounded-full transition-colors relative" aria-label="Cart">
+        <button data-cart-trigger className="p-2 hover:bg-secondary rounded-full transition-colors relative" aria-label="Cart">
           <ShoppingBag className="w-5 h-5" />
           <span className="absolute -top-0.5 -right-0.5 bg-charcoal text-primary-foreground text-xs w-4 h-4 rounded-full flex items-center justify-center font-medium">
             {totalItems}

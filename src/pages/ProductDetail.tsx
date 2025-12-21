@@ -51,7 +51,18 @@ const ProductDetail = () => {
     });
     toast({
       title: "Added to cart",
-      description: `${product.name} (${selectedSize}) x${quantity}`
+      description: `${product.name} (${selectedSize}) x${quantity}`,
+      action: (
+        <button
+          onClick={() => {
+            const cartButton = document.querySelector('[data-cart-trigger]') as HTMLButtonElement;
+            if (cartButton) cartButton.click();
+          }}
+          className="underline hover:no-underline text-sm"
+        >
+          View cart
+        </button>
+      )
     });
   };
   const handleBuyNow = () => {
