@@ -5,7 +5,7 @@ const Hero = () => {
   return <section className="container py-6">
       <div className="relative rounded-2xl overflow-hidden bg-secondary">
         <div className="relative">
-          <img alt="Fall/Winter 2026 Collection" className="w-full h-auto" src="/lovable-uploads/be3cdec7-8019-43c5-b6c4-f74eaa8f7a0e.jpg" />
+          <img alt="Fall/Winter 2026 Collection" className="w-full h-auto" src="/lovable-uploads/32bceadb-2678-455d-98f4-ace5f558da22.jpg" />
           
           {/* Overlay Content */}
           <div className="absolute inset-0 flex flex-col items-end justify-end text-center p-6 pb-12">
@@ -15,7 +15,9 @@ const Hero = () => {
             }} className="font-display text-4xl md:text-6xl lg:text-7xl font-light mb-2 animate-slide-up text-gray-200">
                 FW'25
               </h1>
-              <p className="font-display text-2xl md:text-3xl lg:text-4xl font-light mb-6 animate-slide-up text-gray-200" style={{ animationDelay: '0.2s' }}>
+              <p className="font-display text-2xl md:text-3xl lg:text-4xl font-light mb-6 animate-slide-up text-gray-200" style={{
+              animationDelay: '0.2s'
+            }}>
                 TERRA VOL. 01
               </p>
               <Link to="/shop" className="group inline-flex items-center gap-2 bg-background/90 backdrop-blur-sm text-foreground px-6 py-3 rounded-full border border-charcoal/20 hover:bg-background transition-all duration-300 animate-fade-in" style={{
