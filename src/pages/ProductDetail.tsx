@@ -7,16 +7,14 @@ import SizeChart from "@/components/SizeChart";
 import { getProductById, products } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "@/hooks/use-toast";
+
 const ProductDetail = () => {
-  const {
-    id
-  } = useParams<{
-    id: string;
-  }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const product = getProductById(id || "");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const {
     addToCart,
     setDirectCheckoutItem
@@ -97,9 +95,31 @@ const ProductDetail = () => {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
-          {/* Product Image */}
-          <div className="aspect-square bg-background rounded-lg overflow-hidden">
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+          {/* Product Images */}
+          <div className="space-y-4">
+            <div className="aspect-square bg-background rounded-lg overflow-hidden">
+              <img 
+                src={product.images[selectedImageIndex]} 
+                alt={product.name} 
+                className="w-full h-full object-cover" 
+              />
+            </div>
+            {/* Image Thumbnails */}
+            <div className="flex gap-3">
+              {product.images.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedImageIndex(idx)}
+                  className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                    selectedImageIndex === idx 
+                      ? "border-charcoal" 
+                      : "border-transparent hover:border-border"
+                  }`}
+                >
+                  <img src={img} alt={`${product.name} view ${idx + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Product Info */}

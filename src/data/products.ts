@@ -1,5 +1,7 @@
 import jasprojectGreen from "@/assets/jasproject-green.png";
 import jasprojectBrown from "@/assets/jasproject-brown.png";
+import jasprojectGreenBack from "@/assets/jasproject-green-back.png";
+import jasprojectBrownBack from "@/assets/jasproject-brown-back.png";
 
 export interface Product {
   id: string;
@@ -7,6 +9,7 @@ export interface Product {
   price: number;
   originalPrice?: number;
   image: string;
+  images: string[];
   discount?: number;
   soldOut?: boolean;
   description: string[];
@@ -20,6 +23,7 @@ export const products: Product[] = [
     name: "TERRA EVERBLUE - GREEN ZIP-UP JACKET",
     price: 1100,
     image: jasprojectGreen,
+    images: [jasprojectGreen, jasprojectGreenBack],
     description: [
       "-Premium fleece zip-up",
       "-Slightly cropped silhouette",
@@ -35,6 +39,7 @@ export const products: Product[] = [
     name: "TERRA ROSETTA - BROWN ZIP-UP JACKET",
     price: 1100,
     image: jasprojectBrown,
+    images: [jasprojectBrown, jasprojectBrownBack],
     description: [
       "-Premium fleece zip-up",
       "-Slightly cropped silhouette",
