@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.send-status-update-email]
 verify_jwt = false
+
+[functions.paymob-payment]
+verify_jwt = false
+
+[functions.paymob-callback]
+verify_jwt = false
