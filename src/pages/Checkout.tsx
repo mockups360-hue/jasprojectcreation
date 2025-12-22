@@ -10,7 +10,6 @@ import { Banknote, Check } from "lucide-react";
 import { z } from "zod";
 
 const emailSchema = z.string().trim().email("Invalid email address").max(255);
-const passwordSchema = z.string().min(6, "Password must be at least 6 characters").max(72);
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -33,10 +32,8 @@ const Checkout = () => {
     : cartTotalPrice;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
     firstName: "",
     lastName: "",
     address: "",
@@ -82,43 +79,14 @@ const Checkout = () => {
     setIsSubmitting(true);
 
     try {
-      let currentUser = user;
-
-      // If not logged in and password provided, create account
-      if (!user && formData.password) {
-        // Validate inputs
-        emailSchema.parse(formData.email);
-        passwordSchema.parse(formData.password);
-
-        // Create new account
-        const { error: signUpError } = await signUp(
-          formData.email,
-          formData.password,
-          formData.firstName,
-          formData.lastName
-        );
-
-        if (signUpError) {
-          if (!signUpError.message.includes("User already registered")) {
-            throw signUpError;
-          }
-          // If user exists, just continue with the order without logging in
-        } else {
-          // Wait for auth state to update
-          await new Promise(resolve => setTimeout(resolve, 500));
-          const { data: { session } } = await supabase.auth.getSession();
-          currentUser = session?.user || null;
-        }
-      } else if (!user) {
-        // Just validate email for guest checkout
-        emailSchema.parse(formData.email);
-      }
+      // Validate email
+      emailSchema.parse(formData.email);
 
       // Create order in database
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .insert({
-          user_id: currentUser?.id || null,
+          user_id: user?.id || null,
           customer_email: formData.email,
           customer_name: `${formData.firstName} ${formData.lastName}`,
           phone: formData.phone,
@@ -228,51 +196,22 @@ const Checkout = () => {
           </div> : <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Account Section - Only show if not logged in */}
-              {!user && (
-                <div>
-                  <h2 className="font-display text-xl mb-4">Account (Optional)</h2>
-                  <p className="font-body text-sm text-muted-foreground mb-4">
-                    Create an account to track your orders (optional)
-                  </p>
-                  <div className="space-y-3">
-                    <input 
-                      type="email" 
-                      name="email" 
-                      placeholder="Email" 
-                      value={formData.email} 
-                      onChange={handleChange} 
-                      required 
-                      className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors" 
-                    />
-                    <input 
-                      type="password" 
-                      name="password" 
-                      placeholder="Password (optional - to create account)" 
-                      value={formData.password} 
-                      onChange={handleChange} 
-                      minLength={6}
-                      className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors bg-muted/30 text-muted-foreground" 
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Contact - Show only when logged in */}
-              {user && (
-                <div>
-                  <h2 className="font-display text-xl mb-4">Contact</h2>
-                  <input 
-                    type="email" 
-                    name="email" 
-                    placeholder="Email" 
-                    value={formData.email} 
-                    onChange={handleChange} 
-                    required 
-                    className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors" 
-                  />
-                </div>
-              )}
+              {/* Email Section */}
+              <div>
+                <h2 className="font-display text-xl mb-4">Email</h2>
+                <p className="font-body text-sm text-muted-foreground mb-4">
+                  Enter your email to receive order updates and access your orders
+                </p>
+                <input 
+                  type="email" 
+                  name="email" 
+                  placeholder="Email" 
+                  value={formData.email} 
+                  onChange={handleChange} 
+                  required 
+                  className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors" 
+                />
+              </div>
 
               <div>
                 <h2 className="font-display text-xl mb-4">Shipping Address</h2>
@@ -305,7 +244,7 @@ const Checkout = () => {
               </div>
 
               <button type="submit" disabled={isSubmitting} className="w-full bg-charcoal text-primary-foreground rounded-full py-4 font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
-                {isSubmitting ? "Processing..." : user ? "Place Order" : isNewUser ? "Create Account & Place Order" : "Sign In & Place Order"}
+                {isSubmitting ? "Processing..." : "Place Order"}
               </button>
             </form>
 

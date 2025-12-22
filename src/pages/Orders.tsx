@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { z } from "zod";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+const emailSchema = z.string().trim().email("Invalid email address").max(255);
 
 interface OrderItem {
   id: string;
@@ -38,19 +41,14 @@ interface Order {
 }
 
 const Orders = () => {
-  const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    }
-  }, [user, loading, navigate]);
+  const [email, setEmail] = useState("");
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
 
   // Check if user is admin
   useEffect(() => {
@@ -66,6 +64,8 @@ const Orders = () => {
 
       if (!error && data) {
         setIsAdmin(true);
+        // Auto-fetch orders for admin
+        fetchOrdersForAdmin();
       }
     };
 
@@ -74,43 +74,85 @@ const Orders = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user) return;
+  const fetchOrdersForAdmin = async () => {
+    setLoadingOrders(true);
+    const { data: ordersData, error: ordersError } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-      // Admin sees all orders, regular users see only their own
-      let query = supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
+    if (ordersError) {
+      console.error("Error fetching orders:", ordersError);
+      setLoadingOrders(false);
+      return;
+    }
 
-      const { data: ordersData, error: ordersError } = await query;
+    const ordersWithItems = await Promise.all(
+      (ordersData || []).map(async (order) => {
+        const { data: itemsData } = await supabase
+          .from("order_items")
+          .select("*")
+          .eq("order_id", order.id);
+        return { ...order, items: itemsData || [] };
+      })
+    );
 
-      if (ordersError) {
-        console.error("Error fetching orders:", ordersError);
-        setLoadingOrders(false);
+    setOrders(ordersWithItems);
+    setLoadingOrders(false);
+  };
+
+  const fetchOrdersByEmail = async (searchEmail: string) => {
+    try {
+      emailSchema.parse(searchEmail);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Invalid email",
+          description: error.errors[0].message,
+          variant: "destructive"
+        });
         return;
       }
-
-      // Fetch order items for each order
-      const ordersWithItems = await Promise.all(
-        (ordersData || []).map(async (order) => {
-          const { data: itemsData } = await supabase
-            .from("order_items")
-            .select("*")
-            .eq("order_id", order.id);
-          return { ...order, items: itemsData || [] };
-        })
-      );
-
-      setOrders(ordersWithItems);
-      setLoadingOrders(false);
-    };
-
-    if (user) {
-      fetchOrders();
     }
-  }, [user, isAdmin]);
+
+    setLoadingOrders(true);
+    setEmailSubmitted(true);
+
+    const { data: ordersData, error: ordersError } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("customer_email", searchEmail.trim().toLowerCase())
+      .order("created_at", { ascending: false });
+
+    if (ordersError) {
+      console.error("Error fetching orders:", ordersError);
+      toast({
+        title: "Error",
+        description: "Failed to fetch orders. Please try again.",
+        variant: "destructive"
+      });
+      setLoadingOrders(false);
+      return;
+    }
+
+    const ordersWithItems = await Promise.all(
+      (ordersData || []).map(async (order) => {
+        const { data: itemsData } = await supabase
+          .from("order_items")
+          .select("*")
+          .eq("order_id", order.id);
+        return { ...order, items: itemsData || [] };
+      })
+    );
+
+    setOrders(ordersWithItems);
+    setLoadingOrders(false);
+  };
+
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchOrdersByEmail(email);
+  };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     setUpdatingStatus(orderId);
@@ -236,14 +278,58 @@ const Orders = () => {
           </p>
         )}
 
+        {/* Email lookup form for non-admin users */}
+        {!isAdmin && !emailSubmitted && (
+          <div className="max-w-md mb-8">
+            <p className="font-body text-sm text-muted-foreground mb-4">
+              Enter your email address to view your orders
+            </p>
+            <form onSubmit={handleEmailSubmit} className="flex gap-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+                className="flex-1 border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors"
+              />
+              <button
+                type="submit"
+                className="bg-charcoal text-primary-foreground rounded-full py-3 px-8 font-body text-sm hover:opacity-90 transition-opacity"
+              >
+                View Orders
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Show different email button if already submitted */}
+        {!isAdmin && emailSubmitted && (
+          <div className="mb-8">
+            <p className="font-body text-sm text-muted-foreground mb-2">
+              Showing orders for: <span className="text-foreground font-medium">{email}</span>
+            </p>
+            <button
+              onClick={() => {
+                setEmailSubmitted(false);
+                setOrders([]);
+                setEmail("");
+              }}
+              className="font-body text-sm text-charcoal underline hover:opacity-70 transition-opacity"
+            >
+              Use different email
+            </button>
+          </div>
+        )}
+
         {loadingOrders ? (
           <div className="text-center py-16">
             <p className="font-body text-muted-foreground">Loading orders...</p>
           </div>
-        ) : orders.length === 0 ? (
+        ) : !isAdmin && !emailSubmitted ? null : orders.length === 0 ? (
           <div className="text-center py-16">
             <p className="font-body text-muted-foreground mb-4">
-              {isAdmin ? "No orders yet" : "You haven't placed any orders yet"}
+              {isAdmin ? "No orders yet" : "No orders found for this email"}
             </p>
             {!isAdmin && (
               <Link
