@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -6,7 +6,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Banknote, Check } from "lucide-react";
+import { Banknote, CreditCard, Check, X, Loader2 } from "lucide-react";
 import { z } from "zod";
 
 const emailSchema = z.string().trim().email("Invalid email address").max(255);
@@ -16,7 +16,7 @@ const Checkout = () => {
   const [searchParams] = useSearchParams();
   const isDirectCheckout = searchParams.get('direct') === 'true';
   
-  const { user, signUp, signIn } = useAuth();
+  const { user } = useAuth();
   const {
     items: cartItems,
     totalPrice: cartTotalPrice,
@@ -32,6 +32,13 @@ const Checkout = () => {
     : cartTotalPrice;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
+  const [showPaymobIframe, setShowPaymobIframe] = useState(false);
+  const [paymentToken, setPaymentToken] = useState<string | null>(null);
+  const [iframeId, setIframeId] = useState<string | null>(null);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -56,6 +63,67 @@ const Checkout = () => {
       }
     };
   }, [isDirectCheckout, clearDirectCheckout]);
+
+  // Listen for Paymob iframe callback
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data?.type === 'paymob_callback') {
+        setShowPaymobIframe(false);
+        setPaymentToken(null);
+        
+        if (event.data.success) {
+          toast({
+            title: "Payment successful!",
+            description: "Your order has been confirmed."
+          });
+          
+          // Send confirmation email
+          if (currentOrderId) {
+            try {
+              await supabase.functions.invoke('send-order-email', {
+                body: {
+                  orderId: currentOrderId,
+                  customerEmail: formData.email,
+                  customerName: `${formData.firstName} ${formData.lastName}`,
+                  phone: formData.phone,
+                  address: formData.address,
+                  city: formData.city,
+                  items: items.map(item => ({
+                    name: item.name,
+                    size: item.size,
+                    quantity: item.quantity,
+                    price: item.price
+                  })),
+                  subtotal: totalPrice,
+                  shipping: shippingCost,
+                  total: totalPrice + shippingCost
+                }
+              });
+            } catch (e) {
+              console.error('Error sending confirmation email:', e);
+            }
+          }
+          
+          if (isDirectCheckout) {
+            clearDirectCheckout();
+          } else {
+            clearCart();
+          }
+          navigate('/orders');
+        } else {
+          toast({
+            title: "Payment failed",
+            description: "Please try again or choose a different payment method.",
+            variant: "destructive"
+          });
+        }
+        setCurrentOrderId(null);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [currentOrderId, formData, items, isDirectCheckout, clearDirectCheckout, clearCart, navigate, totalPrice]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -82,7 +150,9 @@ const Checkout = () => {
       // Validate email
       emailSchema.parse(formData.email);
 
-      // Create order in database
+      const orderTotal = totalPrice + shippingCost;
+
+      // Create order in database (status depends on payment method)
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -94,9 +164,9 @@ const Checkout = () => {
           city: formData.city,
           subtotal: totalPrice,
           shipping: shippingCost,
-          total: totalPrice + shippingCost,
-          status: "confirmed",
-          payment_method: "cash_on_delivery"
+          total: orderTotal,
+          status: paymentMethod === 'cash' ? "confirmed" : "pending_payment",
+          payment_method: paymentMethod === 'cash' ? "cash_on_delivery" : "card_pending"
         })
         .select()
         .single();
@@ -118,42 +188,77 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError;
 
-      // Send confirmation emails
-      const emailData = {
-        orderId: orderData.id,
-        customerEmail: formData.email,
-        customerName: `${formData.firstName} ${formData.lastName}`,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        items: items.map(item => ({
-          name: item.name,
-          size: item.size,
-          quantity: item.quantity,
-          price: item.price
-        })),
-        subtotal: totalPrice,
-        shipping: shippingCost,
-        total: totalPrice + shippingCost
-      };
+      if (paymentMethod === 'card') {
+        // Initialize Paymob payment
+        setCurrentOrderId(orderData.id);
+        
+        const { data: paymentData, error: paymentError } = await supabase.functions.invoke('paymob-payment', {
+          body: {
+            amount: orderTotal,
+            orderId: orderData.id,
+            customerEmail: formData.email,
+            customerName: `${formData.firstName} ${formData.lastName}`,
+            phone: formData.phone,
+            items: items.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price
+            })),
+            billingData: {
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              address: formData.address,
+              city: formData.city,
+              phone: formData.phone,
+              email: formData.email
+            }
+          }
+        });
 
-      await supabase.functions.invoke('send-order-email', {
-        body: emailData
-      });
+        if (paymentError || !paymentData?.success) {
+          throw new Error(paymentData?.error || 'Failed to initialize payment');
+        }
 
-      toast({
-        title: "Order confirmed!",
-        description: "Thank you for your purchase. View your order in My Orders."
-      });
-      
-      // Clear appropriate cart
-      if (isDirectCheckout) {
-        clearDirectCheckout();
+        setPaymentToken(paymentData.paymentToken);
+        setIframeId(paymentData.iframeId);
+        setShowPaymobIframe(true);
       } else {
-        clearCart();
+        // Cash on delivery - send confirmation immediately
+        const emailData = {
+          orderId: orderData.id,
+          customerEmail: formData.email,
+          customerName: `${formData.firstName} ${formData.lastName}`,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          items: items.map(item => ({
+            name: item.name,
+            size: item.size,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          subtotal: totalPrice,
+          shipping: shippingCost,
+          total: orderTotal
+        };
+
+        await supabase.functions.invoke('send-order-email', {
+          body: emailData
+        });
+
+        toast({
+          title: "Order confirmed!",
+          description: "Thank you for your purchase. View your order in My Orders."
+        });
+        
+        if (isDirectCheckout) {
+          clearDirectCheckout();
+        } else {
+          clearCart();
+        }
+        
+        navigate('/orders');
       }
-      
-      navigate('/orders');
     } catch (error: any) {
       console.error("Error placing order:", error);
       if (error instanceof z.ZodError) {
@@ -165,7 +270,7 @@ const Checkout = () => {
       } else {
         toast({
           title: "Error",
-          description: "There was a problem placing your order. Please try again.",
+          description: error.message || "There was a problem placing your order. Please try again.",
           variant: "destructive"
         });
       }
@@ -174,7 +279,22 @@ const Checkout = () => {
     }
   };
 
-  return <div className="min-h-screen bg-background">
+  const closePaymobIframe = async () => {
+    setShowPaymobIframe(false);
+    setPaymentToken(null);
+    
+    // Update order status to cancelled if payment was abandoned
+    if (currentOrderId) {
+      await supabase
+        .from('orders')
+        .update({ status: 'cancelled', payment_method: 'cancelled' })
+        .eq('id', currentOrderId);
+    }
+    setCurrentOrderId(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-8">
         {/* Breadcrumb */}
@@ -188,12 +308,15 @@ const Checkout = () => {
 
         <h1 className="font-display text-4xl md:text-5xl font-light mb-8">Checkout</h1>
 
-        {items.length === 0 ? <div className="text-center py-16">
+        {items.length === 0 ? (
+          <div className="text-center py-16">
             <p className="font-body text-muted-foreground mb-4">Your cart is empty</p>
             <Link to="/shop" className="inline-block bg-charcoal text-primary-foreground rounded-full py-3 px-8 font-body text-sm hover:opacity-90 transition-opacity">
               Continue Shopping
             </Link>
-          </div> : <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Section */}
@@ -229,22 +352,76 @@ const Checkout = () => {
               {/* Payment Method */}
               <div>
                 <h2 className="font-display text-xl mb-4">Payment Method</h2>
-                <div className="border-2 border-charcoal rounded-2xl p-4 flex items-center gap-4 bg-secondary/30">
-                  <div className="w-10 h-10 rounded-full bg-charcoal text-primary-foreground flex items-center justify-center">
-                    <Banknote className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-display text-sm">Cash on Delivery</p>
-                    <p className="font-body text-xs text-muted-foreground">Pay when you receive your order</p>
-                  </div>
-                  <div className="w-6 h-6 rounded-full bg-charcoal text-primary-foreground flex items-center justify-center">
-                    <Check className="w-4 h-4" />
-                  </div>
+                <div className="space-y-3">
+                  {/* Card Payment Option */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('card')}
+                    className={`w-full rounded-2xl p-4 flex items-center gap-4 transition-all ${
+                      paymentMethod === 'card' 
+                        ? 'border-2 border-charcoal bg-secondary/30' 
+                        : 'border border-border hover:border-charcoal/50'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      paymentMethod === 'card' ? 'bg-charcoal text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      <CreditCard className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-display text-sm">Credit / Debit Card</p>
+                      <p className="font-body text-xs text-muted-foreground">Pay securely with Visa, Mastercard, or Meeza</p>
+                    </div>
+                    {paymentMethod === 'card' && (
+                      <div className="w-6 h-6 rounded-full bg-charcoal text-primary-foreground flex items-center justify-center">
+                        <Check className="w-4 h-4" />
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Cash on Delivery Option */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('cash')}
+                    className={`w-full rounded-2xl p-4 flex items-center gap-4 transition-all ${
+                      paymentMethod === 'cash' 
+                        ? 'border-2 border-charcoal bg-secondary/30' 
+                        : 'border border-border hover:border-charcoal/50'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      paymentMethod === 'cash' ? 'bg-charcoal text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      <Banknote className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-display text-sm">Cash on Delivery</p>
+                      <p className="font-body text-xs text-muted-foreground">Pay when you receive your order</p>
+                    </div>
+                    {paymentMethod === 'cash' && (
+                      <div className="w-6 h-6 rounded-full bg-charcoal text-primary-foreground flex items-center justify-center">
+                        <Check className="w-4 h-4" />
+                      </div>
+                    )}
+                  </button>
                 </div>
               </div>
 
-              <button type="submit" disabled={isSubmitting} className="w-full bg-charcoal text-primary-foreground rounded-full py-4 font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
-                {isSubmitting ? "Processing..." : "Place Order"}
+              <button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="w-full bg-charcoal text-primary-foreground rounded-full py-4 font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : paymentMethod === 'card' ? (
+                  "Proceed to Payment"
+                ) : (
+                  "Place Order"
+                )}
               </button>
             </form>
 
@@ -252,7 +429,8 @@ const Checkout = () => {
             <div className="bg-secondary/30 rounded-2xl p-6 h-fit">
               <h2 className="font-display text-xl mb-6">Order Summary</h2>
               <div className="space-y-4 border-b border-border pb-4 mb-4">
-                {items.map(item => <div key={`${item.id}-${item.size}`} className="flex gap-4">
+                {items.map(item => (
+                  <div key={`${item.id}-${item.size}`} className="flex gap-4">
                     <div className="w-16 h-20 bg-background rounded overflow-hidden relative">
                       <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       <span className="absolute -top-1 -right-1 bg-charcoal text-primary-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center">
@@ -264,7 +442,8 @@ const Checkout = () => {
                       <p className="font-body text-xs text-muted-foreground">Size: {item.size}</p>
                       <p className="font-body text-sm mt-1">LE {(item.price * item.quantity).toLocaleString()}</p>
                     </div>
-                  </div>)}
+                  </div>
+                ))}
               </div>
               <div className="space-y-2 text-sm font-body">
                 <div className="flex justify-between">
@@ -281,10 +460,38 @@ const Checkout = () => {
                 </div>
               </div>
             </div>
-          </div>}
+          </div>
+        )}
       </main>
       
       <Footer />
-    </div>;
+
+      {/* Paymob Payment Modal */}
+      {showPaymobIframe && paymentToken && iframeId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-background rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="font-display text-lg">Complete Payment</h3>
+              <button 
+                onClick={closePaymobIframe}
+                className="p-2 hover:bg-muted rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-0">
+              <iframe
+                ref={iframeRef}
+                src={`https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${paymentToken}`}
+                className="w-full h-[500px] border-0"
+                title="Paymob Payment"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
+
 export default Checkout;
