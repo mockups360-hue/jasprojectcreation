@@ -353,7 +353,8 @@ const Checkout = () => {
               <div>
                 <h2 className="font-display text-xl mb-4">Payment Method</h2>
                 <div className="space-y-3">
-                  {/* Card Payment Option */}
+                  {/* Card Payment Option - Temporarily hidden */}
+                  {/* TODO: Uncomment when Paymob integration is ready
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('card')}
@@ -378,8 +379,7 @@ const Checkout = () => {
                       </div>
                     )}
                   </button>
-
-                  {/* Cash on Delivery Option */}
+                  */}
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('cash')}
