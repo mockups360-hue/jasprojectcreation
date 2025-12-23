@@ -47,24 +47,13 @@ const Header = () => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-background border border-border">
-                {user ? (
-                  <>
-                    <DropdownMenuItem onClick={() => navigate("/orders")} className="cursor-pointer">
-                      Orders
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
-                      Logout
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <>
-                    <DropdownMenuItem onClick={() => navigate("/auth")} className="cursor-pointer">
-                      Login
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/auth?mode=signup")} className="cursor-pointer">
-                      Sign up
-                    </DropdownMenuItem>
-                  </>
+                <DropdownMenuItem onClick={() => navigate("/orders")} className="cursor-pointer">
+                  My Orders
+                </DropdownMenuItem>
+                {user && (
+                  <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
+                    Logout
+                  </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>

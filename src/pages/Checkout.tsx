@@ -109,7 +109,7 @@ const Checkout = () => {
           } else {
             clearCart();
           }
-          navigate('/orders');
+          navigate('/thank-you');
         } else {
           toast({
             title: "Payment failed",
@@ -257,7 +257,7 @@ const Checkout = () => {
           clearCart();
         }
         
-        navigate('/orders');
+        navigate('/thank-you');
       }
     } catch (error: any) {
       console.error("Error placing order:", error);

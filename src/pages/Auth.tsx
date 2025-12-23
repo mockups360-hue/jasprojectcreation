@@ -5,23 +5,22 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+
+const ADMIN_EMAIL = "jasproject.co@gmail.com";
 
 const emailSchema = z.string().trim().email("Invalid email address").max(255);
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters").max(72);
-const nameSchema = z.string().trim().min(1, "This field is required").max(100);
 
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, signUp, signIn } = useAuth();
-  const [isLogin, setIsLogin] = useState(searchParams.get("mode") !== "signup");
+  const { user, signIn } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    firstName: "",
-    lastName: "",
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -29,33 +28,23 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  // Check if email is admin email
   useEffect(() => {
-    setIsLogin(searchParams.get("mode") !== "signup");
-  }, [searchParams]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+    setIsAdminLogin(email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+  }, [email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Validate inputs
-      emailSchema.parse(formData.email);
-      passwordSchema.parse(formData.password);
-      
-      if (!isLogin) {
-        nameSchema.parse(formData.firstName);
-        nameSchema.parse(formData.lastName);
-      }
+      emailSchema.parse(email);
 
-      if (isLogin) {
-        const { error } = await signIn(formData.email, formData.password);
+      if (isAdminLogin) {
+        // Admin login with password
+        passwordSchema.parse(password);
+        
+        const { error } = await signIn(email, password);
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
             toast({
@@ -78,32 +67,28 @@ const Auth = () => {
           navigate("/");
         }
       } else {
-        const { error } = await signUp(
-          formData.email,
-          formData.password,
-          formData.firstName,
-          formData.lastName
-        );
-        if (error) {
-          if (error.message.includes("User already registered")) {
-            toast({
-              title: "Account exists",
-              description: "An account with this email already exists. Please log in instead.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Sign up failed",
-              description: error.message,
-              variant: "destructive",
-            });
+        // Regular user - send magic link
+        const redirectUrl = `${window.location.origin}/orders`;
+        
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: redirectUrl,
           }
-        } else {
+        });
+
+        if (error) {
           toast({
-            title: "Account created!",
-            description: "Welcome to JASPROJECT. You are now logged in.",
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
           });
-          navigate("/");
+        } else {
+          setMagicLinkSent(true);
+          toast({
+            title: "Check your email",
+            description: "We've sent you a login link to access your account.",
+          });
         }
       }
     } catch (error) {
@@ -119,61 +104,66 @@ const Auth = () => {
     }
   };
 
+  if (magicLinkSent) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container py-12">
+          <div className="max-w-md mx-auto text-center">
+            <h1 className="font-display text-4xl md:text-5xl font-light mb-4">
+              Check Your Email
+            </h1>
+            <p className="font-body text-muted-foreground mb-8">
+              We've sent a login link to <strong>{email}</strong>. Click the link to access your orders.
+            </p>
+            <button
+              onClick={() => {
+                setMagicLinkSent(false);
+                setEmail("");
+              }}
+              className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+            >
+              Use a different email
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-12">
         <div className="max-w-md mx-auto">
           <h1 className="font-display text-4xl md:text-5xl font-light mb-2 text-center">
-            {isLogin ? "Login" : "Create Account"}
+            Access Your Account
           </h1>
           <p className="text-center font-body text-muted-foreground mb-8">
-            {isLogin
-              ? "Sign in to view your orders"
-              : "Join JASPROJECT to track your orders"}
+            Enter your email to view your orders
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  name="firstName"
-                  placeholder="First name"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required={!isLogin}
-                  className="border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors"
-                />
-                <input
-                  type="text"
-                  name="lastName"
-                  placeholder="Last name"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required={!isLogin}
-                  className="border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors"
-                />
-              </div>
-            )}
             <input
               type="email"
-              name="email"
               placeholder="Email"
-              value={formData.email}
-              onChange={handleChange}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors"
             />
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors"
-            />
+            
+            {isAdminLogin && (
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full border border-border rounded-full px-5 py-3 font-body text-sm focus:outline-none focus:border-charcoal transition-colors"
+              />
+            )}
 
             <button
               type="submit"
@@ -182,22 +172,17 @@ const Auth = () => {
             >
               {isSubmitting
                 ? "Please wait..."
-                : isLogin
+                : isAdminLogin
                 ? "Sign In"
-                : "Create Account"}
+                : "Send Login Link"}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors underline"
-            >
-              {isLogin
-                ? "Don't have an account? Sign up"
-                : "Already have an account? Sign in"}
-            </button>
-          </div>
+          {!isAdminLogin && (
+            <p className="mt-6 text-center font-body text-xs text-muted-foreground">
+              No password needed. We'll send you a secure login link.
+            </p>
+          )}
         </div>
       </main>
       <Footer />
